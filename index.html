@@ -3,17 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>測試頁</title>
+    <title>互動測試頁</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            transition: background-color 0.5s;
+        }
         h1 { color: #2E86C1; }
-        p { color: #555; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 10px; }
+        #catImg { width: 200px; height: 200px; margin-top: 20px; border-radius: 10px; }
+        #typing { font-size: 20px; color: #555; margin-top: 30px; min-height: 30px; }
     </style>
 </head>
 <body>
-    <h1>GitHub Pages 測試成功！🎉</h1>
-    <p>如果你看到這個畫面，代表網頁已經可以正常顯示了。</p>
-    <button onclick="alert('測試按鈕成功點擊！')">點我試試</button>
+    <h1>互動測試頁 🎉</h1>
+    
+    <button onclick="randomMessage()">隨機訊息</button>
+    <button onclick="changeBackground()">換背景顏色</button>
+    <button onclick="randomCat()">隨機貓咪</button>
+    
+    <div id="typing"></div>
+    <img id="catImg" src="" alt="隨機貓咪">
+    
+    <script>
+        // 隨機訊息
+        const messages = ["你今天真棒！💪", "喝杯咖啡吧 ☕", "笑一個 😆", "程式世界很酷 🖥️"];
+        function randomMessage() {
+            alert(messages[Math.floor(Math.random() * messages.length)]);
+        }
+
+        // 背景顏色
+        function changeBackground() {
+            const color = `hsl(${Math.floor(Math.random() * 360)}, 70%, 80%)`;
+            document.body.style.backgroundColor = color;
+        }
+
+        // 隨機貓咪圖片
+        function randomCat() {
+            fetch("https://api.thecatapi.com/v1/images/search")
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById("catImg").src = data[0].url;
+                })
+                .catch(err => console.log("API 讀取失敗", err));
+        }
+
+        // 打字機動畫
+        const typingText = "這是打字機動畫，看看效果吧！";
+        let idx = 0;
+        function typeWriter() {
+            if(idx < typingText.length){
+                document.getElementById("typing").innerHTML += typingText.charAt(idx);
+                idx++;
+                setTimeout(typeWriter, 100);
+            }
+        }
+        typeWriter();
+    </script>
 </body>
 </html>
