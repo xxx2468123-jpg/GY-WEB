@@ -40,9 +40,9 @@ let score = 0;
 
 // 遊戲迴圈
 function gameLoop(){
-  // 背景隨分數變化
-  let hue = score*5 % 360;
-  let light = Math.min(20 + score, 90);
+  // 背景顏色隨分數變化
+  let hue = (score*10) % 360;                 // 色相變化
+  let light = Math.min(50 + score*0.5, 80);   // 亮度 50~80%
   document.body.style.backgroundColor = `hsl(${hue}, 70%, ${light}%)`;
 
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -72,7 +72,7 @@ function gameLoop(){
   ctx.fill();
   
   // 畫收集點
-  dots.forEach((d,i)=>{
+  dots.forEach((d)=>{
     ctx.beginPath();
     ctx.arc(d.x, d.y, d.r,0,Math.PI*2);
     ctx.fillStyle = d.color;
