@@ -1,66 +1,127 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>互動測試頁</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            padding: 50px;
-            transition: background-color 0.5s;
-        }
-        h1 { color: #2E86C1; }
-        button { padding: 10px 20px; font-size: 16px; cursor: pointer; margin: 10px; }
-        #catImg { width: 200px; height: 200px; margin-top: 20px; border-radius: 10px; }
-        #typing { font-size: 20px; color: #555; margin-top: 30px; min-height: 30px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>彩色互動小遊樂場</title>
+<style>
+  body { margin:0; overflow:hidden; background:#222; color:#fff; font-family:Arial,sans-serif;}
+  #score { position:absolute; top:10px; left:10px; font-size:24px; }
+  canvas { display:block; }
+</style>
 </head>
 <body>
-    <h1>互動測試頁 🎉</h1>
-    
-    <button onclick="randomMessage()">隨機訊息</button>
-    <button onclick="changeBackground()">換背景顏色</button>
-    <button onclick="randomCat()">隨機貓咪</button>
-    
-    <div id="typing"></div>
-    <img id="catImg" src="" alt="隨機貓咪">
-    
-    <script>
-        // 隨機訊息
-        const messages = ["你今天真棒！💪", "喝杯咖啡吧 ☕", "笑一個 😆", "程式世界很酷 🖥️"];
-        function randomMessage() {
-            alert(messages[Math.floor(Math.random() * messages.length)]);
-        }
+<div id="score">分數: 0</div>
+<canvas id="gameCanvas"></canvas>
 
-        // 背景顏色
-        function changeBackground() {
-            const color = `hsl(${Math.floor(Math.random() * 360)}, 70%, 80%)`;
-            document.body.style.backgroundColor = color;
-        }
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-        // 隨機貓咪圖片
-        function randomCat() {
-            fetch("https://api.thecatapi.com/v1/images/search")
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById("catImg").src = data[0].url;
-                })
-                .catch(err => console.log("API 讀取失敗", err));
-        }
+// 玩家小球
+let player = { x: canvas.width/2, y: canvas.height/2, r:20 };
 
-        // 打字機動畫
-        const typingText = "這是打字機動畫，看看效果吧！";
-        let idx = 0;
-        function typeWriter() {
-            if(idx < typingText.length){
-                document.getElementById("typing").innerHTML += typingText.charAt(idx);
-                idx++;
-                setTimeout(typeWriter, 100);
-            }
-        }
-        typeWriter();
-    </script>
+// 滑鼠位置
+let mouse = { x: player.x, y: player.y };
+document.addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+// 彩色尾巴陣列
+let tails = [];
+
+// 收集點
+let dots = [];
+for(let i=0;i<15;i++){
+  dots.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height, r:10, color:`hsl(${Math.random()*360},70%,50%)` });
+}
+
+let score = 0;
+
+// 遊戲迴圈
+function gameLoop(){
+  // 背景隨分數變化
+  let hue = score*5 % 360;
+  let light = Math.min(20 + score, 90);
+  document.body.style.backgroundColor = `hsl(${hue}, 70%, ${light}%)`;
+
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  
+  // 玩家跟隨滑鼠
+  player.x += (mouse.x - player.x) * 0.1;
+  player.y += (mouse.y - player.y) * 0.1;
+
+  // 加入尾巴點
+  tails.push({x: player.x, y: player.y, r: player.r/2, color:`hsl(${Math.random()*360},70%,50%)`, alpha:1});
+  
+  // 畫尾巴
+  for(let i=tails.length-1;i>=0;i--){
+    let t = tails[i];
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, t.r, 0, Math.PI*2);
+    ctx.fillStyle = `rgba(${hslToRgb(t.color)},${t.alpha})`;
+    ctx.fill();
+    t.alpha -= 0.03;
+    if(t.alpha <= 0) tails.splice(i,1);
+  }
+
+  // 畫玩家
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.r, 0, Math.PI*2);
+  ctx.fillStyle = "#fff";
+  ctx.fill();
+  
+  // 畫收集點
+  dots.forEach((d,i)=>{
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, d.r,0,Math.PI*2);
+    ctx.fillStyle = d.color;
+    ctx.fill();
+    
+    // 碰撞檢測
+    let dx = player.x - d.x;
+    let dy = player.y - d.y;
+    let dist = Math.sqrt(dx*dx + dy*dy);
+    if(dist < player.r + d.r){
+      score++;
+      document.getElementById("score").innerText = "分數: "+score;
+      d.x = Math.random()*canvas.width;
+      d.y = Math.random()*canvas.height;
+      player.r = 20 + score*0.5; // 玩家球隨分數變大
+    }
+  });
+  
+  requestAnimationFrame(gameLoop);
+}
+gameLoop();
+
+// 視窗 resize
+window.addEventListener("resize", ()=>{
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+// HSL 顏色轉 RGB
+function hslToRgb(hsl){
+  let parts = hsl.match(/hsl\((\d+),(\d+)%,(\d+)%\)/);
+  let h = Number(parts[1])/360, s=Number(parts[2])/100, l=Number(parts[3])/100;
+  let r,g,b;
+  if(s==0){ r=g=b=l; } else {
+    const hue2rgb=(p,q,t)=>{
+      if(t<0) t+=1; if(t>1) t-=1;
+      if(t<1/6) return p+(q-p)*6*t;
+      if(t<1/2) return q;
+      if(t<2/3) return p+(q-p)*(2/3-t)*6;
+      return p;
+    }
+    let q = l<0.5? l*(1+s): l+s-l*s;
+    let p = 2*l - q;
+    r=hue2rgb(p,q,h+1/3);
+    g=hue2rgb(p,q,h);
+    b=hue2rgb(p,q,h-1/3);
+  }
+  return `${Math.floor(r*255)},${Math.floor(g*255)},${Math.floor(b*255)}`;
+}
+</script>
 </body>
 </html>
